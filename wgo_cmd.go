@@ -525,6 +525,12 @@ func (wgoCmd *WgoCmd) Run() error {
 			// work interactively (the tests will pass, but somehow it won't
 			// actually work if you run it in person. I don't know why).
 			if wgoCmd.EnableStdin {
+				// Discard any bytes the user typed into the TTY before this
+				// restart but never submitted with a newline. Without this,
+				// the kernel TTY input queue would deliver them to the next
+				// command's stdin when the user finally hits Enter, causing
+				// pre-restart input to bleed into the new session. See #24.
+				flushStdin(wgoCmd.Stdin)
 				stdinPipeMutex.Lock()
 				stdinPipe, err = cmd.StdinPipe()
 				stdinPipeMutex.Unlock()
